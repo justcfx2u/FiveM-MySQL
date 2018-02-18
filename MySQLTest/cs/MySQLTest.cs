@@ -20,14 +20,14 @@ namespace MySQLTest
         {
             if(API.GetCurrentResourceName() == resourcename)
             {
-                mysql = new GHMatti.MySQL.MySQL("localhost", "3306", "fivem", "ghmatti", "password", true, taskScheduler);
+                mysql = new GHMatti.MySQL.MySQL("localhost", "3306", "fivem", "ghmatti", "passwords", true, taskScheduler);
                 ExecuteQueries(resourcename);
             }
         }
 
         private async void ExecuteQueries(string resourcename)
         {
-            await Delay(30000); // Wait 30s before starting the C# execution of queries, because 10 are not enough for Lua.
+            await Delay(30000);
             string line;
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
             StreamReader file = new StreamReader(Path.Combine("resources",resourcename,"sql","MySQLTest.sql"));

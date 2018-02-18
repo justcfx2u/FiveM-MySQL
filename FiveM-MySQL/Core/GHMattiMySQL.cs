@@ -25,9 +25,9 @@ namespace GHMattiMySQL
             initialized = false;
             EventHandlers["onServerResourceStart"] += new Func<string, Task>(Initialization);
 
-            Exports.Add("Query", new Func<string, Task<int>>((query) => Query(query)));
-            Exports.Add("QueryResult", new Func<string, Task<MySQLResult>>((query) => QueryResult(query)));
-            Exports.Add("QueryScalar", new Func<string, Task<dynamic>>((query) => QueryScalar(query)));
+            Exports.Add("Query", new Func<string, dynamic, Task<int>>((query, parameters) => Query(query, parameters)));
+            Exports.Add("QueryResult", new Func<string, dynamic, Task<MySQLResult>>((query, parameters) => QueryResult(query, parameters)));
+            Exports.Add("QueryScalar", new Func<string, dynamic, Task<dynamic>>((query, parameters) => QueryScalar(query, parameters)));
         }
 
         private async Task Initialization(string resourcename)
@@ -51,22 +51,25 @@ namespace GHMattiMySQL
             }   
         }
 
-        private async Task<int> Query(string query)
+        private async Task<int> Query(string query, dynamic parameters)
         {
+            // parameter cast should happen here, need to do it for error reporting later
             await Initialized();
-            return await mysql.Query(query);
+            return await mysql.Query(query, parameters);
         }
 
-        private async Task<MySQLResult> QueryResult(string query)
+        private async Task<MySQLResult> QueryResult(string query, dynamic parameters)
         {
+            // parameter cast should happen here, need to do it for error reporting later
             await Initialized();
-            return await mysql.QueryResult(query);
+            return await mysql.QueryResult(query, parameters);
         }
 
-        private async Task<dynamic> QueryScalar(string query)
+        private async Task<dynamic> QueryScalar(string query, dynamic parameters)
         {
+            // parameter cast should happen here, need to do it for error reporting later
             await Initialized();
-            return await mysql.QueryScalar(query);
+            return await mysql.QueryScalar(query, parameters);
         }
 
         private async Task Initialized()

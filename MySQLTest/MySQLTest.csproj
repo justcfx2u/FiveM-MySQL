@@ -58,6 +58,7 @@
     <Compile Include="cs\MySQL\Connection.cs" />
     <Compile Include="cs\MySQL\MySQL.cs" />
     <Compile Include="cs\MySQL\MySQLResult.cs" />
+    <Compile Include="cs\MySQL\Parameters.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace GHMatti.MySQL
             db.connection.Close();
         }
 
-        public Task<int> Query(string query) => Task.Factory.StartNew(() => {
+        public Task<int> Query(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => {
             int result = -1;
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -39,6 +40,7 @@ namespace GHMatti.MySQL
                 using (MySqlCommand cmd = db.connection.CreateCommand())
                 {
                     cmd.CommandText = query;
+                    cmd.AddParameters(parameters);
 
                     timer.Restart();
                     result = cmd.ExecuteNonQuery();
@@ -53,7 +55,7 @@ namespace GHMatti.MySQL
         }, CancellationToken.None, TaskCreationOptions.None, queryScheduler);
 
 
-        public Task<dynamic> QueryScalar(string query) => Task.Factory.StartNew(() => {
+        public Task<dynamic> QueryScalar(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => {
             dynamic result = null;
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -82,7 +84,7 @@ namespace GHMatti.MySQL
         }, CancellationToken.None, TaskCreationOptions.None, queryScheduler);
 
 
-        public Task<MySQLResult> QueryResult(string query) => Task.Factory.StartNew(() => {
+        public Task<MySQLResult> QueryResult(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => {
             MySQLResult result = new MySQLResult();
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -97,6 +99,7 @@ namespace GHMatti.MySQL
                 using (MySqlCommand cmd = db.connection.CreateCommand())
                 {
                     cmd.CommandText = query;
+                    cmd.AddParameters(parameters);
 
                     timer.Restart();
                     using (MySqlDataReader reader = cmd.ExecuteReader())
