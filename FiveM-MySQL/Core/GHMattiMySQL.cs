@@ -23,14 +23,30 @@ namespace GHMattiMySQL
         {
             taskScheduler = new GHMattiTaskScheduler();
             initialized = false;
-            EventHandlers["onServerResourceStart"] += new Func<string, Task>(Initialization);
+            EventHandlers["onServerResourceStart"] += new Action<string>(Initialization);
 
-            Exports.Add("Query", new Func<string, dynamic, Task<int>>((query, parameters) => Query(query, parameters)));
-            Exports.Add("QueryResult", new Func<string, dynamic, Task<MySQLResult>>((query, parameters) => QueryResult(query, parameters)));
-            Exports.Add("QueryScalar", new Func<string, dynamic, Task<dynamic>>((query, parameters) => QueryScalar(query, parameters)));
+            Exports.Add("Query", new Func<string, dynamic, Task<int>>(
+                (query, parameters) => Query(query, parameters))
+            );
+            Exports.Add("QueryResult", new Func<string, dynamic, Task<MySQLResult>>(
+                (query, parameters) => QueryResult(query, parameters))
+            );
+            Exports.Add("QueryScalar", new Func<string, dynamic, Task<dynamic>>(
+                (query, parameters) => QueryScalar(query, parameters))
+            );
+
+            Exports.Add("QueryAsync", new Action<string, dynamic, CallbackDelegate>(
+                (query, parameters, cb) => QueryAsync(query, parameters, cb))
+            );
+            Exports.Add("QueryResultAsync", new Action<string, dynamic, CallbackDelegate>(
+                (query, parameters, cb) => QueryResultAsync(query, parameters, cb))
+            );
+            Exports.Add("QueryScalarAsync", new Action<string, dynamic, CallbackDelegate>(
+                (query, parameters, cb) => QueryScalarAsync(query, parameters, cb))
+            );
         }
 
-        private async Task Initialization(string resourcename)
+        private async void Initialization(string resourcename)
         {
             if (API.GetCurrentResourceName() == resourcename)
             {
@@ -53,23 +69,44 @@ namespace GHMattiMySQL
 
         private async Task<int> Query(string query, dynamic parameters)
         {
-            // parameter cast should happen here, need to do it for error reporting later
             await Initialized();
-            return await mysql.Query(query, parameters);
+            return await mysql.Query(query, Parameters.TryParseParameters(parameters));
         }
 
         private async Task<MySQLResult> QueryResult(string query, dynamic parameters)
         {
-            // parameter cast should happen here, need to do it for error reporting later
             await Initialized();
-            return await mysql.QueryResult(query, parameters);
+            return await mysql.QueryResult(query, Parameters.TryParseParameters(parameters));
         }
 
         private async Task<dynamic> QueryScalar(string query, dynamic parameters)
         {
-            // parameter cast should happen here, need to do it for error reporting later
             await Initialized();
-            return await mysql.QueryScalar(query, parameters);
+            return await mysql.QueryScalar(query, Parameters.TryParseParameters(parameters));
+        }
+
+        private async void QueryAsync(string query, dynamic parameters, CallbackDelegate callback)
+        {
+            await Initialized();
+            dynamic result = await mysql.Query(query, Parameters.TryParseParameters(parameters));
+            await Delay(0); // need to wait for the next server tick before invoking, will error otherwise
+            callback.Invoke(result);
+        }
+
+        private async void QueryResultAsync(string query, dynamic parameters, CallbackDelegate callback)
+        {
+            await Initialized();
+            dynamic result = await mysql.QueryResult(query, Parameters.TryParseParameters(parameters));
+            await Delay(0); 
+            callback.Invoke(result);
+        }
+
+        private async void QueryScalarAsync(string query, dynamic parameters, CallbackDelegate callback)
+        {
+            await Initialized();
+            dynamic result = await mysql.QueryScalar(query, Parameters.TryParseParameters(parameters));
+            await Delay(0);
+            callback.Invoke(result);
         }
 
         private async Task Initialized()
