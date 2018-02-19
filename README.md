@@ -22,4 +22,4 @@ Async exports do not wait for the result to be returned, thus they do not return
 ## Change Log
 * **2018/02/17** *Version: 0.0.1:* Initial Release
 * **2018/02/18** *Version: 0.0.2:* Added Parameter Handling, and Async exports for Lua.
-* **2018/02/18** *Version: 0.0.3:* Better Debug Handling, Added Multi-Row Inserts, Made Callbacks optional for Async calls. Does not just throw/die anymore on faulty mysql Command syntax.
+* **2018/02/19** *Version: 0.0.3:* Better Debug Handling, Added Multi-Row Inserts, Made Callbacks optional for Async calls. Does not just throw/die anymore on faulty mysql Command syntax.
