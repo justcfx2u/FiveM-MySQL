@@ -12,7 +12,7 @@ namespace GHMatti.MySQL
                     cmd.Parameters.AddWithValue(kvp.Key, kvp.Value);
         }
 
-        public static IDictionary<string, dynamic> TryParseParameters(dynamic parameters)
+        public static IDictionary<string, dynamic> TryParse(dynamic parameters, bool debug = true)
         {
             IDictionary<string, dynamic> parsedParameters = null;
             try
@@ -21,7 +21,8 @@ namespace GHMatti.MySQL
             }
             catch
             {
-                CitizenFX.Core.Debug.WriteLine("[GHMattiMySQL Warning] Parameters are not in Dictionary-shape");
+                if(debug)
+                    CitizenFX.Core.Debug.WriteLine("[GHMattiMySQL Warning] Parameters are not in Dictionary-shape");
                 parsedParameters = null;
             }
                 

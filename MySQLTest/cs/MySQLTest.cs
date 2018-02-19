@@ -2,6 +2,7 @@
 using CitizenFX.Core.Native;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace MySQLTest
 {
@@ -20,7 +21,7 @@ namespace MySQLTest
         {
             if(API.GetCurrentResourceName() == resourcename)
             {
-                mysql = new GHMatti.MySQL.MySQL("localhost", "3306", "fivem", "ghmatti", "passwords", true, taskScheduler);
+                mysql = new GHMatti.MySQL.MySQL("localhost", "3306", "fivem", "ghmatti", "password", true, taskScheduler);
                 ExecuteQueries(resourcename);
             }
         }
@@ -34,7 +35,7 @@ namespace MySQLTest
             timer.Start();
             while ((line = file.ReadLine()) != null)
             {
-                await mysql.Query(line);
+                Task t = mysql.Query(line);
             }
             timer.Stop();
             file.Close();

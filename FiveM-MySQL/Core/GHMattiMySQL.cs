@@ -44,6 +44,10 @@ namespace GHMattiMySQL
             Exports.Add("QueryScalarAsync", new Action<string, dynamic, CallbackDelegate>(
                 (query, parameters, cb) => QueryScalarAsync(query, parameters, cb))
             );
+
+            Exports.Add("Insert", new Action<string, dynamic>(
+                (table, parameters) => Insert(table, parameters))
+            );
         }
 
         private async void Initialization(string resourcename)
@@ -70,44 +74,65 @@ namespace GHMattiMySQL
         private async Task<int> Query(string query, dynamic parameters)
         {
             await Initialized();
-            return await mysql.Query(query, Parameters.TryParseParameters(parameters));
+            return await mysql.Query(query, Parameters.TryParse(parameters));
         }
 
         private async Task<MySQLResult> QueryResult(string query, dynamic parameters)
         {
             await Initialized();
-            return await mysql.QueryResult(query, Parameters.TryParseParameters(parameters));
+            return await mysql.QueryResult(query, Parameters.TryParse(parameters));
         }
 
         private async Task<dynamic> QueryScalar(string query, dynamic parameters)
         {
             await Initialized();
-            return await mysql.QueryScalar(query, Parameters.TryParseParameters(parameters));
+            return await mysql.QueryScalar(query, Parameters.TryParse(parameters));
         }
 
-        private async void QueryAsync(string query, dynamic parameters, CallbackDelegate callback)
+        private async void QueryAsync(string query, dynamic parameters, CallbackDelegate callback = null)
         {
             await Initialized();
-            dynamic result = await mysql.Query(query, Parameters.TryParseParameters(parameters));
-            await Delay(0); // need to wait for the next server tick before invoking, will error otherwise
-            callback.Invoke(result);
+            dynamic result = await mysql.Query(query, Parameters.TryParse(parameters, Convert.ToBoolean(cfg["MySQL:Debug"])));
+            if(callback != null)
+            {
+                await Delay(0); // need to wait for the next server tick before invoking, will error otherwise
+                callback.Invoke(result);
+            }
         }
 
-        private async void QueryResultAsync(string query, dynamic parameters, CallbackDelegate callback)
+        private async void QueryResultAsync(string query, dynamic parameters, CallbackDelegate callback = null)
         {
             await Initialized();
-            dynamic result = await mysql.QueryResult(query, Parameters.TryParseParameters(parameters));
-            await Delay(0); 
-            callback.Invoke(result);
+            dynamic result = await mysql.QueryResult(query, Parameters.TryParse(parameters, Convert.ToBoolean(cfg["MySQL:Debug"])));
+            if (callback != null)
+            {
+                await Delay(0);
+                callback.Invoke(result);
+            }
         }
 
-        private async void QueryScalarAsync(string query, dynamic parameters, CallbackDelegate callback)
+        private async void QueryScalarAsync(string query, dynamic parameters, CallbackDelegate callback = null)
         {
             await Initialized();
-            dynamic result = await mysql.QueryScalar(query, Parameters.TryParseParameters(parameters));
-            await Delay(0);
-            callback.Invoke(result);
+            dynamic result = await mysql.QueryScalar(query, Parameters.TryParse(parameters, Convert.ToBoolean(cfg["MySQL:Debug"])));
+            if (callback != null)
+            {
+                await Delay(0);
+                callback.Invoke(result);
+            }
         }
+
+        private async void Insert(string table, dynamic parameters)
+        {
+            await Initialized();
+            MultiRow multiRow = await ParseMultiRow(table, parameters);
+            await mysql.Query(multiRow.CommandText, multiRow.Parameters);
+        }
+
+        private async Task<MultiRow> ParseMultiRow(string table, dynamic parameters) => await Task.Factory.StartNew(() =>
+        {
+            return MultiRow.TryParse(table, parameters);
+        }, CancellationToken.None, TaskCreationOptions.None, taskScheduler);
 
         private async Task Initialized()
         {

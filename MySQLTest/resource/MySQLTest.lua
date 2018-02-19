@@ -3,16 +3,13 @@ Citizen.CreateThread(function()
 	print("Starting MySQL-Lua Performance Test")
 
 	local y = os.clock()
-	local x = y
+	local lastcb = os.clock()
 	for line in data:gmatch("([^\n]*)\n?") do
 		if line ~= "" and line ~= nil then
-			-- check query type
-			x = os.clock()
-			exports["GHMattiMySQL"]:Query(line)
-			luaExecTime(x)
+			exports["GHMattiMySQL"]:QueryAsync(line, {}, function() lastcb = os.clock() end)
 		end
 	end
-	print(string.format("Lua Query execution time for all queries: %.0fms\n", (os.clock() - y)*1000))
+	print(string.format("Lua Query execution time for all queries: %.0fms\n", (lastcb - y)*1000))
 end)
 
 function luaExecTime(t)

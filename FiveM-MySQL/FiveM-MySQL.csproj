@@ -56,6 +56,7 @@
     <Compile Include="Core\TaskScheduler.cs" />
     <Compile Include="Core\GHMattiMySQL.cs" />
     <Compile Include="MySQL\Connection.cs" />
+    <Compile Include="MySQL\MultiRow.cs" />
     <Compile Include="MySQL\MySQL.cs" />
     <Compile Include="MySQL\MySQLResult.cs" />
     <Compile Include="MySQL\Parameters.cs" />

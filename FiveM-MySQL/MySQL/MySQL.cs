@@ -21,11 +21,13 @@ namespace GHMatti.MySQL
             );
             Debug = debug;
             queryScheduler = taskScheduler;
-            Connection db = new Connection(connectionString);
-            db.connection.Close();
+            // Cannot execute that connection in on the server thread, but we need to test if the connection string is actually correct
+            // This will cause a hitch if the constructor is not put in a Task on a different thread
+            using (Connection db = new Connection(connectionString)) { }
         }
 
-        public Task<int> Query(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => {
+        public Task<int> Query(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => 
+        {
             int result = -1;
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -37,15 +39,23 @@ namespace GHMatti.MySQL
                 db.connection.Open();
                 connectionTime = timer.ElapsedMilliseconds;
 
-                using (MySqlCommand cmd = db.connection.CreateCommand())
+                try
                 {
-                    cmd.CommandText = query;
-                    cmd.AddParameters(parameters);
+                    using (MySqlCommand cmd = db.connection.CreateCommand())
+                    {
+                        cmd.CommandText = query;
+                        cmd.AddParameters(parameters);
 
-                    timer.Restart();
-                    result = cmd.ExecuteNonQuery();
-                    queryTime = timer.ElapsedMilliseconds;
+                        timer.Restart();
+                        result = cmd.ExecuteNonQuery();
+                        queryTime = timer.ElapsedMilliseconds;
+                    }
                 }
+                catch(MySqlException mysqlEx)
+                {
+                    PrintErrorInformation(mysqlEx);
+                }
+                // I don't think I want to catch the other exceptions. Just throw for now.
             }
 
             timer.Stop();
@@ -54,8 +64,8 @@ namespace GHMatti.MySQL
             return result;
         }, CancellationToken.None, TaskCreationOptions.None, queryScheduler);
 
-
-        public Task<dynamic> QueryScalar(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => {
+        public Task<dynamic> QueryScalar(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => 
+        {
             dynamic result = null;
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -72,8 +82,16 @@ namespace GHMatti.MySQL
                     cmd.CommandText = query;
 
                     timer.Restart();
-                    result = cmd.ExecuteScalar();
-                    queryTime = timer.ElapsedMilliseconds;
+                    try
+                    {
+                        result = cmd.ExecuteScalar();
+                        queryTime = timer.ElapsedMilliseconds;
+                    }
+                    catch (MySqlException mysqlEx)
+                    {
+                        PrintErrorInformation(mysqlEx);
+                    }
+                    // I don't think I want to catch the other exceptions. Just throw for now.
                 }
             }
 
@@ -84,7 +102,8 @@ namespace GHMatti.MySQL
         }, CancellationToken.None, TaskCreationOptions.None, queryScheduler);
 
 
-        public Task<MySQLResult> QueryResult(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => {
+        public Task<MySQLResult> QueryResult(string query, IDictionary<string, dynamic> parameters = null) => Task.Factory.StartNew(() => 
+        {
             MySQLResult result = new MySQLResult();
 
             System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -101,15 +120,23 @@ namespace GHMatti.MySQL
                     cmd.CommandText = query;
                     cmd.AddParameters(parameters);
 
-                    timer.Restart();
-                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    try
                     {
-                        queryTime = timer.ElapsedMilliseconds;
                         timer.Restart();
-                        while (reader.Read())
-                            result.Add(Enumerable.Range(0, reader.FieldCount).ToDictionary(reader.GetName, reader.GetValue));
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            queryTime = timer.ElapsedMilliseconds;
+                            timer.Restart();
+                            while (reader.Read())
+                                result.Add(Enumerable.Range(0, reader.FieldCount).ToDictionary(reader.GetName, reader.GetValue));
+                        }
+                        readTime = timer.ElapsedMilliseconds;
                     }
-                    readTime = timer.ElapsedMilliseconds;
+                    catch (MySqlException mysqlEx)
+                    {
+                        PrintErrorInformation(mysqlEx);
+                    }
+                    // I don't think I want to catch the other exceptions. Just throw for now.
                 }
             }
 
@@ -119,12 +146,19 @@ namespace GHMatti.MySQL
             return result;
         }, CancellationToken.None, TaskCreationOptions.None, queryScheduler);
 
+        private void PrintErrorInformation(MySqlException mysqlEx)
+        {
+            if (Debug)
+                CitizenFX.Core.Debug.Write(String.Format("[GHMattiMySQL ERROR] [ERROR] {0}\n{1}", mysqlEx.Message, mysqlEx.StackTrace));
+            else
+                CitizenFX.Core.Debug.Write(String.Format("[GHMattiMySQL ERROR] {0}\n", mysqlEx.Message));
+        }
 
         private void PrintDebugInformation(long ctime, long qtime, long rtime, string query)
         {
             if(Debug)
                 CitizenFX.Core.Debug.WriteLine(String.Format(
-                    "[MySQL] Connection: {0}ms; Query: {1}ms; Read: {2}ms; Total {3}ms for Query: {4}",
+                    "[MySQL Debug] Connection: {0}ms; Query: {1}ms; Read: {2}ms; Total {3}ms for Query: {4}",
                     ctime, qtime, rtime, ctime+qtime+rtime, query
                 ));
         }
